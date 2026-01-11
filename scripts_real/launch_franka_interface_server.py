@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import threading
 import time
+import argparse
 
 class FrankaInterface:
     def __init__(
@@ -17,6 +18,7 @@ class FrankaInterface:
         self._gripper_lock = threading.Lock()
 
         self.robot = RobotInterface(host)
+        # 注释掉夹爪功能
         self.gripper = None
 
         if enable_gripper:
@@ -26,6 +28,7 @@ class FrankaInterface:
                 print(f'[FrankaInterface] Warning: failed to initialize gripper interface: {e}')
 
         self._print_initial_state()
+        # 注释掉初始夹爪状态打印
         self._print_initial_gripper_state()
 
     def _print_initial_state(self):
@@ -62,6 +65,7 @@ class FrankaInterface:
         except Exception:
             return float('nan')
 
+    # 注释掉夹爪初始状态打印函数
     def _print_initial_gripper_state(self):
         if self.gripper is None:
             print('[FrankaInterface] Gripper: disabled or unavailable')
@@ -109,6 +113,7 @@ class FrankaInterface:
         self.robot.terminate_current_policy()
 
     # ---------------- Gripper (Franka Hand via Polymetis GripperInterface) ----------------
+
     def get_gripper_state(self):
         """Returns a JSON-serializable dict of gripper state, or None if unavailable."""
         if self.gripper is None:
@@ -186,6 +191,33 @@ class FrankaInterface:
             except Exception as e:
                 return {'ok': False, 'error': str(e)}
 
-s = zerorpc.Server(FrankaInterface())
-s.bind("tcp://0.0.0.0:4242")
-s.run()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Launch Franka Interface Server')
+    parser.add_argument('--host', type=str, default='localhost',
+                       help='Polymetis server host (default: localhost)')
+    parser.add_argument('--enable-gripper', action='store_true', default=True,
+                       help='Enable gripper interface (default: True)')
+    parser.add_argument('--no-gripper', dest='enable_gripper', action='store_false',
+                       help='Disable gripper interface')
+    parser.add_argument('--gripper-ip', type=str, default='127.0.0.1',
+                       help='Gripper server IP (default: 127.0.0.1)')
+    parser.add_argument('--gripper-port', type=int, default=50052,
+                       help='Gripper server port (default: 50052)')
+    parser.add_argument('--bind-address', type=str, default='0.0.0.0',
+                       help='zerorpc bind address (default: 0.0.0.0)')
+    parser.add_argument('--bind-port', type=int, default=4242,
+                       help='zerorpc bind port (default: 4242)')
+    args = parser.parse_args()
+
+    interface = FrankaInterface(
+        host=args.host,
+        enable_gripper=args.enable_gripper,
+        gripper_ip=args.gripper_ip,
+        gripper_port=args.gripper_port
+    )
+
+    s = zerorpc.Server(interface)
+    bind_addr = f"tcp://{args.bind_address}:{args.bind_port}"
+    s.bind(bind_addr)
+    print(f"[FrankaInterface] Server listening on {bind_addr}")
+    s.run()

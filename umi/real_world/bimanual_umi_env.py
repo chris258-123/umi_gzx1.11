@@ -8,6 +8,7 @@ from multiprocessing.managers import SharedMemoryManager
 from umi.real_world.rtde_interpolation_controller import RTDEInterpolationController
 from umi.real_world.wsg_controller import WSGController
 from umi.real_world.franka_interpolation_controller import FrankaInterpolationController
+from umi.real_world.franka_gripper_controller import FrankaGripperController
 from umi.real_world.multi_uvc_camera import MultiUvcCamera, VideoRecorder
 from diffusion_policy.common.timestamp_accumulator import (
     TimestampActionAccumulator,
@@ -244,14 +245,33 @@ class BimanualUmiEnv:
                 raise NotImplementedError()
             robots.append(this_robot)
 
-        for gc in grippers_config:
-            this_gripper = WSGController(
-                shm_manager=shm_manager,
-                hostname=gc['gripper_ip'],
-                port=gc['gripper_port'],
-                receive_latency=gc['gripper_obs_latency'],
-                use_meters=True
-            )
+        for gc, rc in zip(grippers_config, robots_config):
+            # Determine gripper type from robot type or explicit config
+            gripper_type = gc.get('gripper_type', 'wsg')  # Default to WSG for backward compatibility
+
+            # Auto-detect: if robot is Franka, use Franka gripper
+            if rc['robot_type'].startswith('franka') and gripper_type == 'wsg':
+                gripper_type = 'franka'
+
+            if gripper_type == 'franka':
+                this_gripper = FrankaGripperController(
+                    shm_manager=shm_manager,
+                    robot_ip=rc['robot_ip'],  # Use robot IP (NUC IP)
+                    robot_port=4242,
+                    frequency=30,
+                    move_max_speed=gc.get('gripper_max_speed', 0.2),
+                    move_max_force=gc.get('gripper_max_force', 70.0),
+                    receive_latency=gc['gripper_obs_latency'],
+                    verbose=False
+                )
+            else:  # WSG gripper
+                this_gripper = WSGController(
+                    shm_manager=shm_manager,
+                    hostname=gc['gripper_ip'],
+                    port=gc['gripper_port'],
+                    receive_latency=gc['gripper_obs_latency'],
+                    use_meters=True
+                )
 
             grippers.append(this_gripper)
 

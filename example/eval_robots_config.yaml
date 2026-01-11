@@ -4,7 +4,7 @@
   "robots": [
     {
       "robot_type": "franka",
-      "robot_ip": "172.16.0.2",
+      "robot_ip": "172.16.13.130",  # NUC IP (where server runs), NOT robot IP!
       "robot_obs_latency": 0.0001, "robot_action_latency": 0.1, "tcp_offset": 0.235,
       # table height for finger-table collision avoidance
       # -inf to disable
@@ -24,11 +24,16 @@
   # gripper configurations, 0->right 1->left
   "grippers": [
     {
-      "gripper_ip": "192.168.0.18",
-      "gripper_port": 1000, "gripper_obs_latency": 0.01, "gripper_action_latency": 0.1
+      "gripper_type": "franka",  # Use Franka native gripper (auto-detected from robot_type)
+      # For Franka gripper, gripper_ip and gripper_port are NOT used (uses robot_ip from robots config)
+      "gripper_obs_latency": 0.01, "gripper_action_latency": 0.1,
+      "gripper_max_speed": 0.2,   # Max gripper speed in m/s (Franka Hand: 0.2 m/s)
+      "gripper_max_force": 70.0   # Max gripper force in N (Franka Hand: 70 N)
     },
+    # For WSG50 gripper (alternative):
     # {
-    #   "gripper_ip": "192.168.0.27",
+    #   "gripper_type": "wsg",
+    #   "gripper_ip": "192.168.0.18",
     #   "gripper_port": 1000, "gripper_obs_latency": 0.01, "gripper_action_latency": 0.1
     # }
   ],
