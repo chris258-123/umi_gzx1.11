@@ -93,7 +93,7 @@ class FrankaInterface:
     def move_to_joint_positions(self, positions, time_to_go):
         self.robot.move_to_joint_positions(
             positions=torch.Tensor(positions),
-            time_to_go=time_to_go,
+            time_to_go=torch.tensor(float(time_to_go)),
         )
     
     def start_cartesian_impedance(self, Kx, Kxd):

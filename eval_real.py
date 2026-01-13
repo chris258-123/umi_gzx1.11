@@ -130,8 +130,8 @@ def main(input, output, robot_config,
     steps_per_inference, max_duration,
     frequency, command_latency, 
     no_mirror, sim_fov, camera_intrinsics, mirror_swap):
-    max_gripper_width = 0.09
-    gripper_speed = 0.2
+    max_gripper_width = 0.08
+    gripper_speed = 0.05
     
     # load robot config file
     robot_config_data = yaml.safe_load(open(os.path.expanduser(robot_config), 'r'))
